@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mein Stundenzettel - Arbeitszeiterfassung</title>
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Stundenzettel">
+
+  <!-- Manifest & Icons -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.png">
+
+  <!-- Tailwind CSS & Font -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- jsPDF & AutoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    input, select, button {
+      touch-action: manipulation;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-20 sm:pb-8 flex flex-col">
+
+  <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white backdrop-blur-sm shadow-inner overflow-hidden">
+          <img src="logo.png" alt="Logo" class="w-full h-full object-cover rounded-xl" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+          <svg class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight leading-tight">Mein Stundenzettel</h1>
+          <p class="text-xs text-indigo-200">Arbeitszeit erfassen & PDF-Export</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button id="pwaInstallBtn" class="hidden px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white flex items-center gap-1.5 text-xs font-semibold shadow-sm transition active:scale-95">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          <span>App installieren</span>
+        </button>
+        <div id="cloudStatusBadge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-medium">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Cloud aktiv (12 Mon.)</span>
+        </div>
+        <div class="px-3 py-1.5 rounded-xl bg-indigo-700/60 border border-indigo-500/40 text-white flex items-center gap-1.5 text-xs font-semibold shadow-inner">
+          <svg class="w-4 h-4 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          <span>Vera Hörnemann</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-3 sm:px-6 pt-5 pb-8 w-full flex-1">
+    <div class="bg-indigo-50 border border-indigo-100 rounded-2xl px-4 py-2.5 mb-4 flex items-center justify-between text-xs text-indigo-900 shadow-sm">
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-indigo-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+        <span><strong>Cloud-Speicher aktiv:</strong> Deine Daten sind gesichert. Zeiten werden 12 Monate aufbewahrt und danach automatisch aufgeräumt.</span>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 mb-5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center space-x-2">
+        <button id="prevMonthBtn" class="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 transition active:scale-95 text-slate-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <span id="currentMonthLabel" class="text-base sm:text-lg font-bold text-slate-800 min-w-[140px] text-center">
+          Monat Laden...
+        </span>
+        <button id="nextMonthBtn" class="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 transition active:scale-95 text-slate-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="todayBtn" class="px-3 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+          Heute
+        </button>
+        <button id="exportPdfBtn" class="flex items-center space-x-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-medium text-xs sm:text-sm rounded-xl shadow-sm transition cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span>PDF Export</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Statistik -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+        <p class="text-xs font-medium text-slate-500">Gesamte Stunden</p>
+        <p id="totalHoursMonth" class="text-xl sm:text-2xl font-bold text-indigo-600 mt-0.5">0:00 h</p>
+        <span id="decimalHoursMonth" class="text-[11px] text-slate-400">0,00 Dezimal</span>
+      </div>
+
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+        <p class="text-xs font-medium text-slate-500">Arbeitstage</p>
+        <p id="totalDaysMonth" class="text-xl sm:text-2xl font-bold text-slate-800 mt-0.5">0</p>
+        <span class="text-[11px] text-slate-400">im gewählten Monat</span>
+      </div>
+
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+        <p class="text-xs font-medium text-slate-500">Ø pro Arbeitstag</p>
+        <p id="avgHoursDay" class="text-xl sm:text-2xl font-bold text-slate-800 mt-0.5">0:00 h</p>
+        <span class="text-[11px] text-slate-400">Schnitt</span>
+      </div>
+
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+        <p class="text-xs font-medium text-slate-500">Gesamte Pause</p>
+        <p id="totalBreakMonth" class="text-xl sm:text-2xl font-bold text-slate-800 mt-0.5">0 Min</p>
+        <span class="text-[11px] text-slate-400">abgezogen</span>
+      </div>
+    </div>
+
+    <!-- Formular -->
+    <section class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 mb-6">
+      <div class="flex items-center justify-between mb-4 border-b pb-3 border-slate-100">
+        <h2 id="formTitle" class="font-bold text-slate-800 text-base sm:text-lg flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-indigo-600 inline-block"></span>
+          Neuen Arbeitstag eintragen
+        </h2>
+        <span class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-2.5 py-1 rounded-full border border-indigo-100">
+          15-Min-Raster (04:30 – 20:30)
+        </span>
+      </div>
+
+      <form id="entryForm" class="space-y-4">
+        <input type="hidden" id="editEntryId" value="">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div>
+            <label for="entryDate" class="block text-xs font-semibold text-slate-600 mb-1.5">Datum (Tag)</label>
+            <input type="date" id="entryDate" required
+                   class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+          </div>
+
+          <div>
+            <label for="startTimeSelect" class="block text-xs font-semibold text-slate-600 mb-1.5">Anfangszeit</label>
+            <select id="startTimeSelect" required
+                    class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+            </select>
+          </div>
+
+          <div>
+            <label for="endTimeSelect" class="block text-xs font-semibold text-slate-600 mb-1.5">Endzeit</label>
+            <select id="endTimeSelect" required
+                    class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+            </select>
+          </div>
+
+          <div>
+            <label for="breakSelect" class="block text-xs font-semibold text-slate-600 mb-1.5">Pause</label>
+            <select id="breakSelect"
+                    class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+              <option value="0">Keine Pause (0 Min)</option>
+              <option value="15">15 Min</option>
+              <option value="30" selected>30 Min</option>
+              <option value="45">45 Min</option>
+              <option value="60">60 Min (1 Std)</option>
+              <option value="75">75 Min</option>
+              <option value="90">90 Min</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+          <div class="sm:col-span-2">
+            <label for="entryNotes" class="block text-xs font-semibold text-slate-600 mb-1.5">Notiz / Bemerkung (optional)</label>
+            <input type="text" id="entryNotes" placeholder="z. B. Spätschicht, Filiale Nord, Überstunden..."
+                   class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+          </div>
+
+          <div class="bg-indigo-50/70 border border-indigo-100 rounded-xl p-2.5 flex items-center justify-between sm:justify-center sm:flex-col text-indigo-900">
+            <span class="text-xs font-medium text-indigo-700">Errechnete Netto-Zeit:</span>
+            <span id="calculatedNetTime" class="text-lg font-bold text-indigo-600">0 Std. 00 Min</span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" id="cancelEditBtn" class="hidden px-4 py-2.5 border border-slate-300 hover:bg-slate-100 text-slate-700 font-medium text-sm rounded-xl transition">
+            Abbrechen
+          </button>
+          <button type="submit" id="submitEntryBtn" class="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-semibold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            <span id="submitBtnText">Eintrag speichern</span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Liste -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-slate-800 text-base">Erfasste Tage in <span id="entriesListMonthTitle">diesem Monat</span></h3>
+          <p class="text-xs text-slate-500">Tippe auf Bearbeiten oder Löschen, um Einträge zu korrigieren</p>
+        </div>
+        <button id="backupBtn" title="Daten sichern oder wiederherstellen" class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition text-xs flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
+          <span class="hidden sm:inline">Backup</span>
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-50/80 text-slate-500 text-xs uppercase tracking-wider font-semibold border-b border-slate-200">
+              <th class="p-3.5 pl-4">Tag / Datum</th>
+              <th class="p-3.5">Von – Bis</th>
+              <th class="p-3.5">Pause</th>
+              <th class="p-3.5">Nettozeit</th>
+              <th class="p-3.5 hidden md:table-cell">Notiz</th>
+              <th class="p-3.5 pr-4 text-right">Aktionen</th>
+            </tr>
+          </thead>
+          <tbody id="entriesTableBody" class="divide-y divide-slate-100">
+          </tbody>
+        </table>
+      </div>
+
+      <div id="emptyState" class="py-12 px-4 text-center hidden">
+        <div class="w-14 h-14 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
+          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <p class="text-sm font-semibold text-slate-700">Keine Arbeitszeiten in diesem Monat</p>
+        <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Trage oben ganz einfach deinen ersten Tag ein. Die PDF-Übersicht steht dir danach sofort zur Verfügung.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Backup Modal -->
+  <div id="backupModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-bold text-lg text-slate-800">Datensicherung</h3>
+        <button id="closeBackupModal" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">✕</button>
+      </div>
+      <p class="text-xs text-slate-500 mb-4">Deine Daten werden sicher gespeichert. Hier kannst du eine Sicherungsdatei als JSON exportieren oder importieren.</p>
+      
+      <div class="space-y-3">
+        <button id="downloadJsonBtn" class="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium text-sm rounded-xl flex items-center justify-center gap-2 transition">
+          <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Sicherung herunterladen (JSON)
+        </button>
+
+        <label class="w-full py-2.5 px-4 border border-dashed border-indigo-400 bg-indigo-50/50 hover:bg-indigo-50 text-indigo-700 font-medium text-sm rounded-xl flex items-center justify-center gap-2 cursor-pointer transition">
+          <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
+          Sicherung wiederherstellen
+          <input type="file" id="importJsonInput" accept=".json" class="hidden">
+        </label>
+      </div>
+
+      <div class="mt-5 pt-3 border-t border-slate-100 flex justify-end">
+        <button id="closeBackupBtn" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-xl">Schließen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Modal -->
+  <div id="deleteModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl border border-slate-200 text-center">
+      <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-3">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      </div>
+      <h3 class="font-bold text-slate-800 text-base mb-1">Eintrag löschen?</h3>
+      <p class="text-xs text-slate-500 mb-5">Möchtest du diesen Arbeitstag wirklich aus deiner Erfassung entfernen?</p>
+      <div class="flex gap-2 justify-center">
+        <button id="cancelDeleteBtn" class="px-4 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50">Abbrechen</button>
+        <button id="confirmDeleteBtn" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 rounded-xl text-xs font-semibold text-white shadow-sm">Löschen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-2 text-sm">
+      <span id="toastIcon">✓</span>
+      <span id="toastMsg">Erfolgreich gespeichert!</span>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then((reg) => {
+            console.log('SW registriert');
+            reg.update();
+          })
+          .catch((err) => console.warn('SW:', err));
+      });
+    }
+
+    let deferredPrompt;
+    const pwaInstallBtn = document.getElementById('pwaInstallBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (pwaInstallBtn) pwaInstallBtn.classList.remove('hidden');
+    });
+
+    if (pwaInstallBtn) {
+      pwaInstallBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') pwaInstallBtn.classList.add('hidden');
+        deferredPrompt = null;
+      });
+    }
+
+    window.addEventListener('appinstalled', () => {
+      if (pwaInstallBtn) pwaInstallBtn.classList.add('hidden');
+    });
+  </script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, collection, onSnapshot, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const FIXED_EMPLOYEE_NAME = 'Vera Hörnemann';
+    const COLLECTION_NAME = 'work_entries';
+    const LOCAL_FALLBACK_KEY = 'arbeitszeiten_entries_v1';
+
+    let db = null;
+    let auth = null;
+    let isCloudReady = false;
+    let entries = [];
+
+    const now = new Date();
+    let currentYear = now.getFullYear();
+    let currentMonth = now.getMonth() + 1;
+    let deleteTargetId = null;
+
+    const monthNames = [
+      'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+      'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+    ];
+    const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+
+    function generateTimeIntervals(startHour, startMinute, endHour, endMinute, stepMinutes = 15) {
+      const times = [];
+      let totalStart = startHour * 60 + startMinute;
+      const totalEnd = endHour * 60 + endMinute;
+      for (let min = totalStart; min <= totalEnd; min += stepMinutes) {
+        const h = Math.floor(min / 60);
+        const m = min % 60;
+        times.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+      }
+      return times;
+    }
+
+    const availableTimes = generateTimeIntervals(4, 30, 20, 30, 15);
+
+    function initTimeSelects() {
+      const startSelect = document.getElementById('startTimeSelect');
+      const endSelect = document.getElementById('endTimeSelect');
+      if (!startSelect || !endSelect) return;
+
+      startSelect.innerHTML = '';
+      endSelect.innerHTML = '';
+
+      availableTimes.forEach((time, index) => {
+        if (index < availableTimes.length - 1) {
+          const opt = document.createElement('option');
+          opt.value = time;
+          opt.textContent = `${time} Uhr`;
+          if (time === '07:30') opt.selected = true;
+          startSelect.appendChild(opt);
+        }
+        if (index > 0) {
+          const opt = document.createElement('option');
+          opt.value = time;
+          opt.textContent = `${time} Uhr`;
+          if (time === '16:00') opt.selected = true;
+          endSelect.appendChild(opt);
+        }
+      });
+    }
+
+    function timeToMinutes(str) {
+      if (!str) return 0;
+      const [h, m] = str.split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    function minutesToHoursFormatted(mins) {
+      if (mins < 0) mins = 0;
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      return `${h}:${String(m).padStart(2, '0')} h`;
+    }
+
+    function minutesToDecimal(mins) {
+      if (mins < 0) mins = 0;
+      const val = mins / 60;
+      return val.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function updateCalculatedDurationPreview() {
+      const startSelect = document.getElementById('startTimeSelect');
+      const endSelect = document.getElementById('endTimeSelect');
+      const breakSelect = document.getElementById('breakSelect');
+      const label = document.getElementById('calculatedNetTime');
+      if (!startSelect || !endSelect || !breakSelect || !label) return;
+
+      const start = timeToMinutes(startSelect.value);
+      const end = timeToMinutes(endSelect.value);
+      const breakMins = parseInt(breakSelect.value || '0', 10);
+      const gross = end - start;
+      const net = gross - breakMins;
+
+      if (gross <= 0) {
+        label.textContent = 'Ungültig (Ende vor Start)';
+        label.className = 'text-lg font-bold text-rose-600';
+      } else if (net < 0) {
+        label.textContent = 'Pause länger als Arbeitszeit';
+        label.className = 'text-lg font-bold text-rose-600';
+      } else {
+        const h = Math.floor(net / 60);
+        const m = net % 60;
+        label.textContent = `${h} Std. ${String(m).padStart(2, '0')} Min (${minutesToDecimal(net)} h)`;
+        label.className = 'text-lg font-bold text-indigo-600';
+      }
+    }
+
+    function showToast(msg, isSuccess = true) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMsg');
+      const toastIcon = document.getElementById('toastIcon');
+      if (!toast) return;
+
+      toastMsg.textContent = msg;
+      toastIcon.textContent = isSuccess ? '✓' : '⚠️';
+      toast.classList.remove('translate-y-24', 'opacity-0');
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 2600);
+    }
+
+    function renderMonthView() {
+      const monthTitle = `${monthNames[currentMonth - 1]} ${currentYear}`;
+      const lblMonth = document.getElementById('currentMonthLabel');
+      const lblTitle = document.getElementById('entriesListMonthTitle');
+      if (lblMonth) lblMonth.textContent = monthTitle;
+      if (lblTitle) lblTitle.textContent = monthTitle;
+
+      const filtered = entries.filter(e => {
+        if (!e.date) return false;
+        const [year, month] = e.date.split('-').map(Number);
+        return year === currentYear && month === currentMonth;
+      });
+
+      filtered.sort((a, b) => a.date.localeCompare(b.date));
+
+      const tbody = document.getElementById('entriesTableBody');
+      const emptyState = document.getElementById('emptyState');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      let totalNetMins = 0;
+      let totalBreakMins = 0;
+
+      if (filtered.length === 0) {
+        if (emptyState) emptyState.classList.remove('hidden');
+      } else {
+        if (emptyState) emptyState.classList.add('hidden');
+
+        filtered.forEach(item => {
+          const startM = timeToMinutes(item.start);
+          const endM = timeToMinutes(item.end);
+          const breakM = item.breakMinutes || 0;
+          const netM = Math.max(0, endM - startM - breakM);
+
+          totalNetMins += netM;
+          totalBreakMins += breakM;
+
+          const dateObj = new Date(item.date + 'T00:00:00');
+          const dayName = dayNames[dateObj.getDay()];
+          const [y, m, d] = item.date.split('-');
+          const germanDate = `${d}.${m}.${y}`;
+          const isWeekend = (dateObj.getDay() === 0 || dateObj.getDay() === 6);
+
+          const tr = document.createElement('tr');
+          tr.className = `border-b border-slate-100 hover:bg-slate-50 transition ${isWeekend ? 'bg-amber-50/30' : ''}`;
+          tr.innerHTML = `
+            <td class="p-3.5 pl-4 whitespace-nowrap">
+              <span class="inline-block px-1.5 py-0.5 rounded text-[11px] font-bold ${isWeekend ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'} mr-1.5">
+                ${dayName}
+              </span>
+              <span class="font-medium text-slate-900">${germanDate}</span>
+            </td>
+            <td class="p-3.5 whitespace-nowrap text-slate-700 font-medium">
+              ${item.start} – ${item.end} Uhr
+            </td>
+            <td class="p-3.5 whitespace-nowrap text-slate-500">
+              ${item.breakMinutes > 0 ? item.breakMinutes + ' Min' : '<span class="text-slate-300">—</span>'}
+            </td>
+            <td class="p-3.5 whitespace-nowrap font-bold text-indigo-600">
+              ${minutesToHoursFormatted(netM)}
+              <span class="text-xs font-normal text-slate-400 block">${minutesToDecimal(netM)} h</span>
+            </td>
+            <td class="p-3.5 hidden md:table-cell text-slate-600 max-w-xs truncate" title="${item.notes ? item.notes.replace(/"/g, '&quot;') : ''}">
+              ${item.notes ? item.notes : '<span class="text-slate-300">—</span>'}
+            </td>
+            <td class="p-3.5 pr-4 text-right whitespace-nowrap">
+              <button onclick="window.editEntry('${item.id}')" class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="Bearbeiten">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button onclick="window.requestDeleteEntry('${item.id}')" class="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition ml-1" title="Löschen">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      const totalDays = filtered.length;
+      const elHours = document.getElementById('totalHoursMonth');
+      const elDec = document.getElementById('decimalHoursMonth');
+      const elDays = document.getElementById('totalDaysMonth');
+      const elBreak = document.getElementById('totalBreakMonth');
+      const elAvg = document.getElementById('avgHoursDay');
+
+      if (elHours) elHours.textContent = minutesToHoursFormatted(totalNetMins);
+      if (elDec) elDec.textContent = `${minutesToDecimal(totalNetMins)} Std.`;
+      if (elDays) elDays.textContent = totalDays;
+      if (elBreak) elBreak.textContent = `${totalBreakMins} Min`;
+
+      const avgMins = totalDays > 0 ? Math.round(totalNetMins / totalDays) : 0;
+      if (elAvg) elAvg.textContent = minutesToHoursFormatted(avgMins);
+    }
+
+    function loadLocalFallback() {
+      try {
+        const raw = localStorage.getItem(LOCAL_FALLBACK_KEY);
+        if (raw) entries = JSON.parse(raw);
+      } catch (e) {
+        entries = [];
+      }
+    }
+
+    function saveLocalFallback() {
+      localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify(entries));
+    }
+
+    function cleanupOldEntriesLocally() {
+      const twelveMonthsAgo = new Date();
+      twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1);
+      const cutoffDateStr = twelveMonthsAgo.toISOString().split('T')[0];
+      const initialCount = entries.length;
+
+      entries = entries.filter(e => e.date >= cutoffDateStr);
+      if (entries.length !== initialCount) {
+        saveLocalFallback();
+      }
+    }
+
+    async function initCloudStorage() {
+      const badge = document.getElementById('cloudStatusBadge');
+      try {
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'stundenzettel-vera';
+        if (typeof __firebase_config !== 'undefined') {
+          const firebaseConfig = JSON.parse(__firebase_config);
+          const app = initializeApp(firebaseConfig);
+          auth = getAuth(app);
+          db = getFirestore(app);
+
+          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token);
+          } else {
+            await signInAnonymously(auth);
+          }
+
+          if (auth.currentUser) {
+            isCloudReady = true;
+            if (badge) badge.classList.remove('hidden');
+            listenToCloudEntries(appId);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Cloud Fallback:", err);
+      }
+
+      loadLocalFallback();
+      cleanupOldEntriesLocally();
+      renderMonthView();
+    }
+
+    function listenToCloudEntries(appId) {
+      if (!isCloudReady || !db) return;
+      const entriesCol = collection(db, 'artifacts', appId, 'public', 'data', COLLECTION_NAME);
+
+      onSnapshot(entriesCol, (snapshot) => {
+        const loaded = [];
+        const twelveMonthsAgo = new Date();
+        twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1);
+        const cutoffDateStr = twelveMonthsAgo.toISOString().split('T')[0];
+
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const item = { id: docSnap.id, ...data };
+          if (item.date && item.date < cutoffDateStr) {
+            deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', COLLECTION_NAME, docSnap.id)).catch(console.error);
+          } else {
+            loaded.push(item);
+          }
+        });
+
+        entries = loaded;
+        renderMonthView();
+      }, (error) => {
+        console.error("Cloud Error:", error);
+        loadLocalFallback();
+        renderMonthView();
+      });
+    }
+
+    function saveLocalRecord(id, record) {
+      const index = entries.findIndex(e => e.id === id);
+      if (index !== -1) {
+        entries[index] = { id, ...record };
+      } else {
+        entries.push({ id, ...record });
+      }
+      saveLocalFallback();
+    }
+
+    function resetForm() {
+      const editEntryId = document.getElementById('editEntryId');
+      const entryNotes = document.getElementById('entryNotes');
+      const submitBtnText = document.getElementById('submitBtnText');
+      const formTitle = document.getElementById('formTitle');
+      const cancelEditBtn = document.getElementById('cancelEditBtn');
+      const entryDateInput = document.getElementById('entryDate');
+
+      if (editEntryId) editEntryId.value = '';
+      if (entryNotes) entryNotes.value = '';
+      if (submitBtnText) submitBtnText.textContent = 'Eintrag speichern';
+      if (formTitle) formTitle.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-indigo-600 inline-block"></span> Neuen Arbeitstag eintragen';
+      if (cancelEditBtn) cancelEditBtn.classList.add('hidden');
+      if (entryDateInput) entryDateInput.valueAsDate = new Date();
+      updateCalculatedDurationPreview();
+    }
+
+    window.editEntry = function(id) {
+      const entry = entries.find(e => e.id === id);
+      if (!entry) return;
+
+      const editEntryId = document.getElementById('editEntryId');
+      const entryDateInput = document.getElementById('entryDate');
+      const startSelect = document.getElementById('startTimeSelect');
+      const endSelect = document.getElementById('endTimeSelect');
+      const breakSelect = document.getElementById('breakSelect');
+      const entryNotes = document.getElementById('entryNotes');
+      const submitBtnText = document.getElementById('submitBtnText');
+      const formTitle = document.getElementById('formTitle');
+      const cancelEditBtn = document.getElementById('cancelEditBtn');
+      const entryForm = document.getElementById('entryForm');
+
+      if (editEntryId) editEntryId.value = entry.id;
+      if (entryDateInput) entryDateInput.value = entry.date;
+      if (startSelect) startSelect.value = entry.start;
+      if (endSelect) endSelect.value = entry.end;
+      if (breakSelect) breakSelect.value = String(entry.breakMinutes || 0);
+      if (entryNotes) entryNotes.value = entry.notes || '';
+
+      if (submitBtnText) submitBtnText.textContent = 'Änderungen übernehmen';
+      if (formTitle) formTitle.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span> Arbeitstag bearbeiten';
+      if (cancelEditBtn) cancelEditBtn.classList.remove('hidden');
+      updateCalculatedDurationPreview();
+
+      if (entryForm) entryForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    window.requestDeleteEntry = function(id) {
+      deleteTargetId = id;
+      const modal = document.getElementById('deleteModal');
+      if (modal) modal.classList.remove('hidden');
+    };
+
+    function generatePdf() {
+      const filtered = entries.filter(e => {
+        if (!e.date) return false;
+        const [year, month] = e.date.split('-').map(Number);
+        return year === currentYear && month === currentMonth;
+      });
+
+      filtered.sort((a, b) => a.date.localeCompare(b.date));
+      const monthName = monthNames[currentMonth - 1];
+
+      if (filtered.length === 0) {
+        showToast(`Keine Einträge für ${monthName} ${currentYear} vorhanden!`, false);
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+      const textBlack = [0, 0, 0];
+      const textMuted = [80, 80, 80];
+      const headerBoxBg = [240, 240, 240];
+      const tableHeadBg = [225, 225, 225];
+      const alternateRowBg = [250, 250, 250];
+      const borderGray = [160, 160, 160];
+
+      doc.setFillColor(...headerBoxBg);
+      doc.setDrawColor(...borderGray);
+      doc.setLineWidth(0.4);
+      doc.rect(14, 14, 182, 18, 'FD');
+
+      doc.setTextColor(...textBlack);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.text('STUNDENZETTEL / ARBEITSZEITNACHWEIS', 19, 23);
+
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`${monthName} ${currentYear}`, 191, 23, { align: 'right' });
+
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...textMuted);
+      doc.text('Monatliche Erfassung der Arbeitsstunden', 19, 28);
+
+      doc.setTextColor(...textBlack);
+      doc.setFontSize(9.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Mitarbeiterin:', 14, 40);
+      doc.setFont('helvetica', 'normal');
+      doc.text(FIXED_EMPLOYEE_NAME, 42, 40);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Abrechnungsmonat:', 120, 40);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${monthName} ${currentYear}`, 160, 40);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Erstellt am:', 120, 46);
+      doc.setFont('helvetica', 'normal');
+      doc.text(new Date().toLocaleDateString('de-DE'), 160, 46);
+
+      doc.setDrawColor(...borderGray);
+      doc.setLineWidth(0.3);
+      doc.line(14, 50, 196, 50);
+
+      let totalMinutes = 0;
+      let totalBreakMinutes = 0;
+
+      const tableData = filtered.map(item => {
+        const dateObj = new Date(item.date + 'T00:00:00');
+        const dName = dayNames[dateObj.getDay()];
+        const [y, m, d] = item.date.split('-');
+        const formattedDate = `${d}.${m}.${y}`;
+
+        const startM = timeToMinutes(item.start);
+        const endM = timeToMinutes(item.end);
+        const brk = item.breakMinutes || 0;
+        const net = Math.max(0, endM - startM - brk);
+
+        totalMinutes += net;
+        totalBreakMinutes += brk;
+
+        return [
+          `${dName}, ${formattedDate}`,
+          `${item.start} Uhr`,
+          `${item.end} Uhr`,
+          brk > 0 ? `${brk} Min` : '—',
+          `${minutesToHoursFormatted(net)}  (${minutesToDecimal(net)} h)`,
+          item.notes || ''
+        ];
+      });
+
+      doc.autoTable({
+        startY: 54,
+        head: [['Datum', 'Beginn', 'Ende', 'Pause', 'Nettozeit (Dez.)', 'Bemerkung']],
+        body: tableData,
+        theme: 'plain',
+        styles: {
+          font: 'helvetica',
+          fontSize: 8.5,
+          cellPadding: 2.5,
+          textColor: textBlack,
+          lineColor: [210, 210, 210],
+          lineWidth: 0.2
+        },
+        headStyles: {
+          fillColor: tableHeadBg,
+          textColor: textBlack,
+          fontStyle: 'bold',
+          lineColor: borderGray,
+          lineWidth: 0.3
+        },
+        alternateRowStyles: {
+          fillColor: alternateRowBg
+        },
+        columnStyles: {
+          0: { cellWidth: 32 },
+          1: { cellWidth: 24 },
+          2: { cellWidth: 24 },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 38, fontStyle: 'bold' },
+          5: { cellWidth: 'auto' }
+        },
+        margin: { left: 14, right: 14 }
+      });
+
+      const finalY = doc.lastAutoTable.finalY + 6;
+      const totalHoursString = minutesToHoursFormatted(totalMinutes);
+      const totalDecimalString = minutesToDecimal(totalMinutes);
+
+      let signY = finalY + 24;
+      if (signY > 265) {
+        doc.addPage();
+        signY = 30;
+      }
+
+      doc.setFillColor(245, 245, 245);
+      doc.setDrawColor(...borderGray);
+      doc.setLineWidth(0.3);
+      doc.rect(14, finalY, 182, 16, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(...textBlack);
+      doc.text(`Gesamtarbeitszeit (${monthName}): ${totalHoursString} (${totalDecimalString} Stunden)`, 18, finalY + 6.5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...textMuted);
+      doc.text(`Arbeitstage: ${filtered.length} Tage  |  Gesamte Pausenzeit: ${totalBreakMinutes} Minuten`, 18, finalY + 12);
+
+      doc.setFontSize(8.5);
+      doc.setTextColor(...textBlack);
+      doc.setDrawColor(...textBlack);
+      doc.setLineWidth(0.3);
+
+      doc.line(14, signY + 14, 90, signY + 14);
+      doc.text('Datum, Unterschrift Vera Hörnemann', 14, signY + 19);
+
+      doc.line(120, signY + 14, 196, signY + 14);
+      doc.text('Datum, Unterschrift Arbeitgeber', 120, signY + 19);
+
+      doc.save(`Stundenzettel_Vera_Hoernemann_${monthName}_${currentYear}.pdf`);
+      showToast(`PDF für ${monthName} heruntergeladen!`);
+    }
+
+    function setupEventListeners() {
+      const entryForm = document.getElementById('entryForm');
+      const entryDateInput = document.getElementById('entryDate');
+      const startSelect = document.getElementById('startTimeSelect');
+      const endSelect = document.getElementById('endTimeSelect');
+      const breakSelect = document.getElementById('breakSelect');
+      const entryNotes = document.getElementById('entryNotes');
+      const editEntryId = document.getElementById('editEntryId');
+      const cancelEditBtn = document.getElementById('cancelEditBtn');
+      const exportPdfBtn = document.getElementById('exportPdfBtn');
+
+      if (entryDateInput) entryDateInput.valueAsDate = new Date();
+
+      if (startSelect) startSelect.addEventListener('change', updateCalculatedDurationPreview);
+      if (endSelect) endSelect.addEventListener('change', updateCalculatedDurationPreview);
+      if (breakSelect) breakSelect.addEventListener('change', updateCalculatedDurationPreview);
+
+      if (entryForm) {
+        entryForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const dateVal = entryDateInput.value;
+          const startVal = startSelect.value;
+          const endVal = endSelect.value;
+          const breakVal = parseInt(breakSelect.value || '0', 10);
+          const notesVal = entryNotes.value.trim();
+
+          const startMins = timeToMinutes(startVal);
+          const endMins = timeToMinutes(endVal);
+
+          if (endMins <= startMins) {
+            showToast('Endzeit muss nach der Anfangszeit liegen!', false);
+            return;
+          }
+
+          if ((endMins - startMins - breakVal) < 0) {
+            showToast('Pause darf nicht länger als die Arbeitszeit sein!', false);
+            return;
+          }
+
+          const existingId = editEntryId.value;
+          const appId = typeof __app_id !== 'undefined' ? __app_id : 'stundenzettel-vera';
+
+          let targetId = existingId;
+          if (!targetId) {
+            const existingForDate = entries.find(item => item.date === dateVal);
+            targetId = existingForDate ? existingForDate.id : 'entry_' + Date.now();
+          }
+
+          const record = {
+            date: dateVal,
+            start: startVal,
+            end: endVal,
+            breakMinutes: breakVal,
+            notes: notesVal,
+            updatedAt: new Date().toISOString()
+          };
+
+          if (isCloudReady && db) {
+            try {
+              await setDoc(doc(db, 'artifacts', appId, 'public', 'data', COLLECTION_NAME, targetId), record);
+              showToast('In der Cloud gespeichert!');
+            } catch (err) {
+              console.error("Cloud Save Error:", err);
+              saveLocalRecord(targetId, record);
+              showToast('Lokal zwischengespeichert');
+            }
+          } else {
+            saveLocalRecord(targetId, record);
+            showToast('Arbeitstag gespeichert!');
+          }
+
+          resetForm();
+
+          const [y, m] = dateVal.split('-').map(Number);
+          currentYear = y;
+          currentMonth = m;
+          renderMonthView();
+        });
+      }
+
+      if (cancelEditBtn) cancelEditBtn.addEventListener('click', resetForm);
+      if (exportPdfBtn) exportPdfBtn.addEventListener('click', generatePdf);
+
+      const prevBtn = document.getElementById('prevMonthBtn');
+      const nextBtn = document.getElementById('nextMonthBtn');
+      const todayBtn = document.getElementById('todayBtn');
+
+      if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+          currentMonth--;
+          if (currentMonth < 1) {
+            currentMonth = 12;
+            currentYear--;
+          }
+          renderMonthView();
+        });
+      }
+
+      if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+          currentMonth++;
+          if (currentMonth > 12) {
+            currentMonth = 1;
+            currentYear++;
+          }
+          renderMonthView();
+        });
+      }
+
+      if (todayBtn) {
+        todayBtn.addEventListener('click', () => {
+          const t = new Date();
+          currentYear = t.getFullYear();
+          currentMonth = t.getMonth() + 1;
+          renderMonthView();
+        });
+      }
+
+      const cancelDel = document.getElementById('cancelDeleteBtn');
+      const confirmDel = document.getElementById('confirmDeleteBtn');
+      const delModal = document.getElementById('deleteModal');
+
+      if (cancelDel) {
+        cancelDel.addEventListener('click', () => {
+          deleteTargetId = null;
+          if (delModal) delModal.classList.add('hidden');
+        });
+      }
+
+      if (confirmDel) {
+        confirmDel.addEventListener('click', async () => {
+          if (deleteTargetId) {
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'stundenzettel-vera';
+            if (isCloudReady && db) {
+              try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', COLLECTION_NAME, deleteTargetId));
+              } catch (err) {
+                console.error("Cloud Delete Error:", err);
+              }
+            }
+            entries = entries.filter(e => e.id !== deleteTargetId);
+            saveLocalFallback();
+            renderMonthView();
+            showToast('Eintrag gelöscht');
+          }
+          deleteTargetId = null;
+          if (delModal) delModal.classList.add('hidden');
+        });
+      }
+
+      const backupBtn = document.getElementById('backupBtn');
+      const backupModal = document.getElementById('backupModal');
+      const closeBackupBtn = document.getElementById('closeBackupBtn');
+      const closeBackupModal = document.getElementById('closeBackupModal');
+
+      if (backupBtn && backupModal) backupBtn.addEventListener('click', () => backupModal.classList.remove('hidden'));
+      const hideBackup = () => { if (backupModal) backupModal.classList.add('hidden'); };
+      if (closeBackupBtn) closeBackupBtn.addEventListener('click', hideBackup);
+      if (closeBackupModal) closeBackupModal.addEventListener('click', hideBackup);
+
+      const downloadJsonBtn = document.getElementById('downloadJsonBtn');
+      if (downloadJsonBtn) {
+        downloadJsonBtn.addEventListener('click', () => {
+          const exportObject = {
+            employee: FIXED_EMPLOYEE_NAME,
+            entries,
+            exportedAt: new Date().toISOString()
+          };
+          const jsonStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObject, null, 2));
+          const downloadAnchor = document.createElement('a');
+          downloadAnchor.setAttribute("href", jsonStr);
+          downloadAnchor.setAttribute("download", `Stundenzettel_Backup_${currentYear}_${currentMonth}.json`);
+          document.body.appendChild(downloadAnchor);
+          downloadAnchor.click();
+          downloadAnchor.remove();
+          showToast('Backup heruntergeladen!');
+        });
+      }
+
+      const importJsonInput = document.getElementById('importJsonInput');
+      if (importJsonInput) {
+        importJsonInput.addEventListener('change', async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = async (event) => {
+            try {
+              const imported = JSON.parse(event.target.result);
+              if (Array.isArray(imported.entries)) {
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'stundenzettel-vera';
+                if (isCloudReady && db) {
+                  for (const item of imported.entries) {
+                    const docId = item.id || ('entry_' + Date.now() + Math.random().toString(36).substring(2, 6));
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', COLLECTION_NAME, docId), {
+                      date: item.date,
+                      start: item.start,
+                      end: item.end,
+                      breakMinutes: item.breakMinutes || 0,
+                      notes: item.notes || '',
+                      updatedAt: new Date().toISOString()
+                    });
+                  }
+                } else {
+                  entries = imported.entries;
+                  saveLocalFallback();
+                  renderMonthView();
+                }
+                hideBackup();
+                showToast('Daten erfolgreich eingespielt!');
+              } else {
+                showToast('Ungültige Sicherungsdatei!', false);
+              }
+            } catch (err) {
+              showToast('Fehler beim Einlesen der Datei!', false);
+            }
+          };
+          reader.readAsText(file);
+        });
+      }
+    }
+
+    initTimeSelects();
+    setupEventListeners();
+    initCloudStorage();
+    updateCalculatedDurationPreview();
+  </script>
+</body>
+</html>
