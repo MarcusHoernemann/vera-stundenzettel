@@ -1,27 +1,27 @@
 {
   "name": "Mein Stundenzettel",
   "short_name": "Stundenzettel",
-  "id": "/https://github.com/MarcusHoernemann/vera-stundenzettel/?v=stundenzettel_fix",
-  "start_url": "/https://github.com/MarcusHoernemann/vera-stundenzettel/index.html",
-  "scope": "/https://github.com/MarcusHoernemann/vera-stundenzettel/",
+  "id": "./?app=stundenzettel_v1",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4f46e5",
   "icons": [
     {
-      "src": "/https://github.com/MarcusHoernemann/vera-stundenzettel/logo.png",
+      "src": "logo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/https://github.com/MarcusHoernemann/vera-stundenzettel/logo.png",
+      "src": "logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/https://github.com/MarcusHoernemann/vera-stundenzettel/logo.png",
+      "src": "logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

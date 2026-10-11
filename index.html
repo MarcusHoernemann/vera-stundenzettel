@@ -5,16 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Mein Stundenzettel - Arbeitszeiterfassung</title>
   <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Stundenzettel">
 
   <!-- Manifest & Icons -->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="logo.png">
   <link rel="apple-touch-icon" href="logo.png">
-  
-  <!-- Apple Fallback -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Stundenzettel">
 
   <!-- Tailwind CSS & Font -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -334,12 +332,12 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
+        navigator.serviceWorker.register('./sw.js', { scope: './' })
           .then((reg) => {
-            console.log('SW registriert');
+            console.log('SW registriert:', reg.scope);
             reg.update();
           })
-          .catch((err) => console.warn('SW:', err));
+          .catch((err) => console.warn('SW Fehler:', err));
       });
     }
 
@@ -441,8 +439,8 @@
     function minutesToHoursFormatted(mins) {
       if (mins < 0) mins = 0;
       const h = Math.floor(mins / 60);
-      const m = mins % 60;
-      return `${h}:${String(m).padStart(2, '0')} h`;
+      const m = min => min % 60;
+      return `${h}:${String(m(mins)).padStart(2, '0')} h`;
     }
 
     function minutesToDecimal(mins) {
