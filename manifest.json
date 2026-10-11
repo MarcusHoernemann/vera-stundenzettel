@@ -1,9 +1,9 @@
 {
   "name": "Mein Stundenzettel",
   "short_name": "Stundenzettel",
-  "id": "./?v=2",
-  "start_url": "./index.html",
-  "scope": "./",
+  "id": "/DEIN-REPO-NAME/?app=stundenzettel_v1",
+  "start_url": "/DEIN-REPO-NAME/",
+  "scope": "/DEIN-REPO-NAME/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4f46e5",
