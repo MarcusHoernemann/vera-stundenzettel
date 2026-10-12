@@ -10,6 +10,15 @@
   <meta name="description" content="Einfache Erfassung der täglichen Arbeitszeiten mit PDF-Export">
   <title>Arbeitszeit-Tracker</title>
 
+  <!-- PWA & Homescreen Icons mit logo.png -->
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="shortcut icon" type="image/png" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="logo.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="logo.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="logo.png">
+  <link id="manifestLink" rel="manifest">
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -60,10 +69,14 @@
   <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200">
     <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center text-white shadow-md shadow-indigo-100">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
+        <!-- App Logo mit Fallback-Icon -->
+        <div class="w-10 h-10 rounded-xl overflow-hidden shadow-md shadow-indigo-100 bg-indigo-600 flex items-center justify-center relative flex-shrink-0">
+          <img src="logo.png" alt="Logo" class="w-full h-full object-cover" onerror="this.style.display='none'; document.getElementById('headerFallbackIcon').style.display='flex';">
+          <div id="headerFallbackIcon" style="display:none;" class="w-full h-full bg-gradient-to-tr from-indigo-600 to-indigo-400 items-center justify-center text-white">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
         </div>
         <div>
           <h1 class="text-lg font-bold text-slate-900 leading-tight">Arbeitszeit-Tracker</h1>
@@ -80,11 +93,12 @@
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           <span id="cloudStatusText">Cloud gesichert (12 Mo.)</span>
         </div>
-        <button id="pwaInstallBtn" class="hidden px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-all flex items-center gap-1.5">
+        <!-- Installieren Button (für Android, PC und iOS-Anleitung) -->
+        <button id="pwaInstallBtn" class="px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 rounded-lg shadow-sm transition-all flex items-center gap-1.5">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
           </svg>
-          App installieren
+          <span>App installieren</span>
         </button>
       </div>
     </div>
@@ -345,6 +359,42 @@
           Löschen
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal: PWA Installationsanleitung (z. B. für iOS Safari & Browser ohne automatisches Prompt) -->
+  <div id="modalInstallGuide" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border border-slate-100 text-center">
+      <div class="w-16 h-16 mx-auto rounded-2xl overflow-hidden shadow-md mb-4 bg-indigo-50 border border-indigo-100 flex items-center justify-center">
+        <img src="logo.png" alt="App Logo" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/128x128/4f46e5/ffffff?text=Zeit'">
+      </div>
+      <h3 class="text-base font-bold text-slate-900 mb-1">Als App auf den Home-Bildschirm</h3>
+      <p class="text-xs text-slate-500 mb-4">Installiere den Arbeitszeit-Tracker für schnellen Zugriff und Offline-Nutzung.</p>
+
+      <div class="text-left bg-slate-50 rounded-xl p-3.5 border border-slate-200/80 space-y-3 text-xs text-slate-700 mb-5">
+        <div class="flex items-start gap-2.5">
+          <span class="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0 mt-0.5">1</span>
+          <div>
+            <strong>Auf dem iPhone (Safari):</strong> Unten in der Leiste auf den <span class="font-semibold text-indigo-600">Teilen-Button</span> (Quadrat mit Pfeil nach oben) tippen.
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5">
+          <span class="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0 mt-0.5">2</span>
+          <div>
+            Im Menü nach unten scrollen und auf <strong class="text-slate-900">„Zum Home-Bildschirm“</strong> tippen.
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5">
+          <span class="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0 mt-0.5">3</span>
+          <div>
+            Oben rechts auf <strong class="text-indigo-600">„Hinzufügen“</strong> drücken – fertig! Das Icon mit <strong>logo.png</strong> liegt nun auf dem Display.
+          </div>
+        </div>
+      </div>
+
+      <button id="btnCloseInstallGuide" class="w-full py-2.5 text-xs font-semibold text-white bg-slate-900 hover:bg-black rounded-xl transition-all">
+        Verstanden
+      </button>
     </div>
   </div>
 
@@ -1013,22 +1063,107 @@
       }
     }
 
-    // PWA Install prompt handling
-    const pwaBtn = document.getElementById('pwaInstallBtn');
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      pwaBtn.classList.remove('hidden');
-    });
-
-    pwaBtn.addEventListener('click', async () => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') pwaBtn.classList.add('hidden');
-        deferredPrompt = null;
+    /* PWA Manifest, Service Worker & Install Handler */
+    function setupPWAFeatures() {
+      // 1. Dynamisches Manifest mit logo.png verknüpfen
+      try {
+        const manifestData = {
+          name: "Arbeitszeit-Tracker Vera",
+          short_name: "Stundenzettel",
+          description: "Arbeitszeit-Tracker für Vera Hörnemann",
+          start_url: window.location.href,
+          scope: "./",
+          display: "standalone",
+          background_color: "#f8fafc",
+          theme_color: "#4f46e5",
+          icons: [
+            {
+              src: "logo.png",
+              sizes: "192x192",
+              type: "image/png",
+              purpose: "any maskable"
+            },
+            {
+              src: "logo.png",
+              sizes: "512x512",
+              type: "image/png",
+              purpose: "any maskable"
+            }
+          ]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/manifest+json' });
+        const manifestUrl = URL.createObjectURL(manifestBlob);
+        const manifestLink = document.getElementById('manifestLink');
+        if (manifestLink) {
+          manifestLink.setAttribute('href', manifestUrl);
+        }
+      } catch (err) {
+        console.warn('Manifest-Initialisierung:', err);
       }
-    });
+
+      // 2. Service Worker für PWA-Offline-Kriterien registrieren
+      if ('serviceWorker' in navigator) {
+        try {
+          const swCode = `
+            const CACHE_NAME = 'arbeitszeit-pwa-v1';
+            self.addEventListener('install', (e) => self.skipWaiting());
+            self.addEventListener('activate', (e) => self.clients.claim());
+            self.addEventListener('fetch', (e) => {
+              e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+            });
+          `;
+          const swBlob = new Blob([swCode], { type: 'application/javascript' });
+          const swUrl = URL.createObjectURL(swBlob);
+          navigator.serviceWorker.register(swUrl).catch((e) => {
+            console.log('SW Note:', e.message);
+          });
+        } catch (e) {
+          console.warn('SW Registrierung übersprungen:', e);
+        }
+      }
+
+      // 3. Intelligenter Installations-Button (Android / PC & iOS Anleitung)
+      const pwaBtn = document.getElementById('pwaInstallBtn');
+      const installModal = document.getElementById('modalInstallGuide');
+      const closeInstallGuide = document.getElementById('btnCloseInstallGuide');
+
+      // Wenn die App bereits im Vollbild/Standalone-Modus läuft, Button ausblenden
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      if (isStandalone && pwaBtn) {
+        pwaBtn.classList.add('hidden');
+      }
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (pwaBtn) pwaBtn.classList.remove('hidden');
+      });
+
+      if (pwaBtn) {
+        pwaBtn.addEventListener('click', async () => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+              pwaBtn.classList.add('hidden');
+              showToast('App wurde erfolgreich installiert!');
+            }
+            deferredPrompt = null;
+          } else {
+            // Zeigt geführte Anleitung für iOS Safari oder Desktop an
+            installModal.classList.remove('hidden');
+            installModal.classList.add('flex');
+          }
+        });
+      }
+
+      if (closeInstallGuide && installModal) {
+        closeInstallGuide.addEventListener('click', () => {
+          installModal.classList.add('hidden');
+          installModal.classList.remove('flex');
+        });
+      }
+    }
 
     /* Application Startup */
     window.addEventListener('DOMContentLoaded', () => {
@@ -1043,6 +1178,7 @@
       renderView();
       setupExportModal();
       initCloudSync();
+      setupPWAFeatures();
     });
   </script>
 </body>
